@@ -5,32 +5,42 @@ from machine import I2C
 from lcd_api import LcdApi
 from pico_i2c_lcd import I2cLcd
 
+import sys
+from rotary_irq_rp2 import RotaryIRQ
+
+import time
+
 I2C_ADDR     = 0x27
-I2C_NUM_ROWS = 4
-I2C_NUM_COLS = 20
+I2C_NUM_ROWS = 2
+I2C_NUM_COLS = 16
 
 def test_main():
     #Test function for verifying basic functionality
     print("Running test_main")
-    i2c = I2C(0, sda=machine.Pin(0), scl=machine.Pin(1), freq=400000)
+    i2c = I2C(0, sda=machine.Pin(16), scl=machine.Pin(17), freq=400000)
     lcd = I2cLcd(i2c, I2C_ADDR, I2C_NUM_ROWS, I2C_NUM_COLS)    
-    lcd.putstr("asdafdfsfsdfsfsdfsffsdsfdsfsfsfsdfsdfdsddfs")
-    utime.sleep(2)
+    lcd.putstr("welcome to measurement fox <3")
     
-    count = 0
+    r = RotaryIRQ(pin_num_clk=7,
+              pin_num_dt=8,
+              reverse=False,
+              pull_up=True,
+              range_mode=RotaryIRQ.RANGE_UNBOUNDED)
     
-    return
+    distance_constant = 2.4
+
+    val_old = r.value()
     while True:
-        lcd.clear()
-        time = utime.localtime()
-        lcd.putstr("{year:>04d}/{month:>02d}/{day:>02d} {HH:>02d}:{MM:>02d}:{SS:>02d}".format(
-            year=time[0], month=time[1], day=time[2],
-            HH=time[3], MM=time[4], SS=time[5]))
-        if count % 2 == 0:
-            print("Turning cursor on")
-            lcd.show_cursor()
-        count += 1
-        utime.sleep(0.01)
+        val_new = r.value()
+
+        if val_old != val_new:
+            val_old = val_new
+            print('result =', val_new)
+            lcd.clear()
+            distance = val_new / distance_constant
+            lcd.putstr("distance pushed:  {:.2f} meters".format(distance))
+
+        time.sleep_ms(50)
 
 #if __name__ == "__main__":
 test_main()
