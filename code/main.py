@@ -31,6 +31,11 @@ def init_rotary(pin_clk, pin_dt):
                      range_mode=RotaryIRQ.RANGE_UNBOUNDED)
 
 def main():
+    '''
+    Main function where the program loops.
+    No parameters.
+    No return  values.
+    '''
     lcd = init_lcd(PIN_SDA, PIN_SCL)
     r1 = init_rotary(15, 14)
     r2 = init_rotary(16, 17)
