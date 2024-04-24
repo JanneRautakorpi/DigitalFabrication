@@ -1,4 +1,4 @@
-Course project for course Principles of Digital Fabrication (University of Oulu, 2024). 
+Course project for Principles of Digital Fabrication (University of Oulu, 2024). 
 * Measurement fox. Uses rotary encoder to measure driven distance and prints it on LCD display.
 * Raspberry Pi Pico, written in Python.
 
