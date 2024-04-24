@@ -15,6 +15,12 @@ SLEEP_TIME = 50  # in ms
 def init_lcd(sda_pin, scl_pin):
     '''
     Initialization for LCD display.
+    Parameters:
+    sda_pin
+    scl_pin
+
+    Return:
+    lcd object
     '''
     i2c = I2C(1, sda=Pin(sda_pin), scl=Pin(scl_pin), freq=400000)
     lcd = I2cLcd(i2c, I2C_ADDR, I2C_NUM_ROWS, I2C_NUM_COLS)
@@ -24,6 +30,12 @@ def init_lcd(sda_pin, scl_pin):
 def init_rotary(pin_clk, pin_dt):
     '''
     Initialization for rotary encoder.
+    Parameters: 
+    pin_clk
+    pin_dt
+
+    Return:
+    instance of RotaryIRQ
     '''
     return RotaryIRQ(pin_num_clk=Pin(pin_clk),
                      pin_num_dt=Pin(pin_dt),
