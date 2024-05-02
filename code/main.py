@@ -9,6 +9,11 @@ I2C_NUM_ROWS = 2
 I2C_NUM_COLS = 16
 PIN_SDA = 26
 PIN_SCL = 27
+PIN_R1_CLK = 15
+PIN_R1_DT = 14
+PIN_R2_CLK = 16
+PIN_R2_DT = 17
+PIN_BUTTON = 7
 SLEEP_TIME = 50  # in ms
 
 
@@ -49,11 +54,16 @@ def main():
     No return  values.
     '''
     lcd = init_lcd(PIN_SDA, PIN_SCL)
-    r1 = init_rotary(15, 14)
-    r2 = init_rotary(16, 17)
-    button = Pin(7, Pin.IN, Pin.PULL_UP)
-    distance_constant = 1
+    r1 = init_rotary(PIN_R1_CLK, PIN_R1_DT)
+    r2 = init_rotary(PIN_R2_CLK, PIN_R2_DT)
+    button = Pin(PIN_BUTTON, Pin.IN, Pin.PULL_UP)
+    distance_constant = 10
     val_old1, val_old2 = r1.value(), r2.value()
+
+    utime.sleep_ms(2000)
+
+    lcd.clear()
+    lcd.putstr("Distance pushed: 0.00   meters")
 
     while True:
         val_new1, val_new2 = r1.value(), r2.value()
@@ -64,8 +74,12 @@ def main():
             print(f'Values = {val_new1}, {val_new2}')
             print(f'Result = {result}')
             distance = result / distance_constant
-            lcd.clear()
-            lcd.putstr(f"Distance pushed: {distance:.2f} meters")
+            lcd.move_to(0, 1)
+            text = f"{distance:.2f}"
+            if (text[0] != '-'):
+                text = " " + text
+
+            lcd.putstr(text)
 
         if not button.value():
             print('Button pressed')
