@@ -7,3 +7,5 @@ Course project for Principles of Digital Fabrication (University of Oulu, 2024).
 * Janne Rautakorpi (@JanneRautakorpi)
 * Rasmus Hintz-Madsen (@nukmuk)
 * Miko Kaartinen (@MikoKaartinen)
+
+Circuit Simulation: https://wokwi.com/projects/396781516993059841
