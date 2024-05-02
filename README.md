@@ -6,4 +6,4 @@ Course project for Principles of Digital Fabrication (University of Oulu, 2024).
 * Veikka Päivärinta (@Daychest)
 * Janne Rautakorpi (@JanneRautakorpi)
 * Rasmus Hintz-Madsen (@nukmuk)
-* Miko Kaartinen
+* Miko Kaartinen (@MikoKaartinen)
