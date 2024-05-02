@@ -15,7 +15,7 @@ PIN_R2_CLK = 16
 PIN_R2_DT = 17
 PIN_BUTTON = 7
 SLEEP_TIME = 50  # in ms
-
+MODE_HOLD_TIME = 1000
 
 def init_lcd(sda_pin, scl_pin):
     '''
@@ -57,13 +57,20 @@ def main():
     r1 = init_rotary(PIN_R1_CLK, PIN_R1_DT)
     r2 = init_rotary(PIN_R2_CLK, PIN_R2_DT)
     button = Pin(PIN_BUTTON, Pin.IN, Pin.PULL_UP)
+    single_wheel_mode = False
     distance_constant = 10
+
+    if single_wheel_mode:
+        distance_constant /= 2
+
     val_old1, val_old2 = r1.value(), r2.value()
+
+    first_loop = True
+    button_held_for = 0
 
     utime.sleep_ms(2000)
 
-    lcd.clear()
-    lcd.putstr("Distance pushed: 0.00   meters")
+    reset_lcd(lcd)
 
     while True:
         val_new1, val_new2 = r1.value(), r2.value()
@@ -81,12 +88,82 @@ def main():
 
             lcd.putstr(text)
 
-        if not button.value():
-            print('Button pressed')
+        if not button.value() and not first_loop:
+            print('Button pressed', button_held_for)
             r1.reset()
             r2.reset()
 
+            if not first_loop:
+                button_held_for += SLEEP_TIME
+                if button_held_for >= MODE_HOLD_TIME:
+                    button_held_for = 0
+                    print('entering menu')
+                    enter_menu(lcd, button, button_held_for, single_wheel_mode)
+                    first_loop = True
+                    print('exiting menu')
+        else:
+            button_held_for = 0
+            first_loop = False
+
         utime.sleep_ms(SLEEP_TIME)
+
+def reset_lcd(lcd):
+    """
+    Clears the LCD display and sets the initial text.
+
+    Parameters:
+    lcd (object): The LCD object used for displaying information.
+
+    Returns:
+    None
+    """
+    lcd.clear()
+    lcd.putstr("Distance pushed: 0.00   meters")
+
+
+
+def enter_menu(lcd, button, button_held_for, single_wheel_mode):
+    """
+    Enters the menu and allows the user to toggle the single wheel mode.
+
+    Args:
+        lcd (object): The LCD object used for displaying information.
+        button (object): The button object used for user input.
+        button_held_for (int): The duration for which the button has been held.
+        single_wheel_mode (bool): The current state of the single wheel mode.
+
+    Returns:
+        None
+    """
+    mode_select = True
+    button_pressed = False
+    first_loop = True
+
+    lcd.clear()
+    lcd.putstr(f"Single wheel mode: {single_wheel_mode}")
+
+    while mode_select:
+        if not button.value():
+            if not button_pressed:
+                button_pressed = True
+                print('Button pressed in menu')
+                single_wheel_mode = not single_wheel_mode
+                print("Single wheel mode set to ", single_wheel_mode)
+            elif not first_loop:
+                button_held_for += SLEEP_TIME
+                print("Button held for ", button_held_for)
+                if button_held_for >= MODE_HOLD_TIME:
+                    mode_select = False
+        else:
+            button_held_for = 0
+            button_pressed = False
+            first_loop = False
+
+        utime.sleep_ms(SLEEP_TIME)
+
+    print('Button held for 1 second')
+    reset_lcd(lcd)
+
 
 #if __name__ == "__main__":
 main()
