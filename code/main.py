@@ -84,6 +84,7 @@ def main():
 
     button_pressed = False
     first_loop = False
+    result = 0
 
     while True:
         val_new1, val_new2 = r1.value(), r2.value()
@@ -109,7 +110,6 @@ def main():
                 text = " " + text
 
             lcd.putstr(text)
-        
 
         # press
         if not button.value() and not button_pressed and not first_loop:
@@ -126,12 +126,12 @@ def main():
             if button_held_for >= MODE_HOLD_TIME:
                 button_held_for = 0
                 print('entering menu')
-                disable_rotatries([r1, r2])
+                disable_rotaries([r1, r2])
                 state["oldResult"] += result
                 r1.reset()
                 r2.reset()
                 result = 0
-                enter_menu(lcd, button, button_held_for, state, r1, r2)
+                enter_menu(lcd, button, button_held_for, state)
                 enable_rotaries(r1, r2, state)
                 print('exiting menu')
                 distance = calculate_distance(result, state)
@@ -147,6 +147,7 @@ def main():
 
             r1.reset()
             r2.reset()
+            result = 0
             state["oldResult"] = 0
 
         # release after exiting menu
@@ -178,7 +179,7 @@ def reset_lcd(lcd, distance):
 
 
 
-def enter_menu(lcd, button, button_held_for, state, r1, r2):
+def enter_menu(lcd, button, button_held_for, state):
     """
     Enters the menu and allows the user to toggle the single wheel mode.
 
@@ -195,8 +196,7 @@ def enter_menu(lcd, button, button_held_for, state, r1, r2):
     button_pressed = True
     first_loop = True
 
-    lcd.clear()
-    lcd.putstr(f"Mode: {get_mode_string(state)}")
+    lcd_put_mode_text(lcd, state)
 
     while mode_select:
         # press
@@ -222,8 +222,7 @@ def enter_menu(lcd, button, button_held_for, state, r1, r2):
             print("release")
 
             state["wheel_mode"] = (state["wheel_mode"] + 1) % 3
-            lcd.clear()
-            lcd.putstr(f"Mode: {get_mode_string(state)}")
+            lcd_put_mode_text(lcd, state)
 
         # release after entering menu
         if button.value() and button_pressed and first_loop:
@@ -250,11 +249,31 @@ def get_mode_string(state):
     modes = ["Both wheels", "Left wheel", "Right wheel"]
     return modes[state["wheel_mode"]]
 
-def disable_rotatries(rotaryEncoders):
-    for r in rotaryEncoders:
+def disable_rotaries(rotaries):
+    """
+    Disables the IRQ (interrupt request) for the given rotaries.
+
+    Args:
+        rotaries (list): A list of rotary encoders.
+
+    Returns:
+        None
+    """
+    for r in rotaries:
         r._hal_disable_irq()
 
 def enable_rotaries(r1, r2, state):
+    """
+    Enable or disable the rotary encoders based on the wheel mode specified in the state dictionary.
+
+    Parameters:
+    - r1: The first rotary encoder object.
+    - r2: The second rotary encoder object.
+    - state: Dictionary containing the current state.
+
+    Returns:
+    None
+    """
     if state["wheel_mode"] == 0:
         r1._hal_enable_irq()
         r2._hal_enable_irq()
@@ -268,7 +287,33 @@ def enable_rotaries(r1, r2, state):
         r2._hal_enable_irq()
 
 def calculate_distance(result, state):
+    """
+    Calculates the distance measured based on the result from rotary encoders and state.
+
+    Parameters:
+    result (float): The result value.
+    state (dict): The state dictionary containing the old result.
+
+    Returns:
+    float: The calculated distance.
+    """
     return (state["oldResult"] + result) * DISTANCE_CONSTANT
+
+def lcd_put_mode_text(lcd, state):
+    """
+    Displays the current mode on the LCD screen.
+
+    Args:
+        lcd: The LCD object used for displaying text.
+        state: State containing the mode.
+
+    Returns:
+        None
+    """
+    lcd.clear()
+    lcd.putstr("Mode:")
+    lcd.move_to(0, 1)
+    lcd.putstr(get_mode_string(state))
 
 #if __name__ == "__main__":
 main()
