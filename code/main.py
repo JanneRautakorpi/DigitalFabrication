@@ -21,7 +21,7 @@ PIN_R1_CLK = 16
 PIN_R1_DT = 17
 PIN_BUTTON = 7
 SLEEP_TIME = 50  # in ms
-MODE_HOLD_TIME = 1000
+MODE_HOLD_TIME = 1000 # in ms
 DISTANCE_CONSTANT = 4.90/468
 LCD_UPDATE = 10 # update display every n loop
 
