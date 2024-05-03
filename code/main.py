@@ -1,11 +1,11 @@
 """
 This module contains the main code for the Measurement Fox project.
-It initializes the LCD display and rotary encoders,and provides functions
+It initializes the LCD display and rotary encoders, and provides functions
 for handling user input and displaying information on the LCD.
 """
 
-import utime # type: ignore
-from machine import I2C, Pin # type: ignore
+import utime
+from machine import I2C, Pin
 from pico_i2c_lcd import I2cLcd
 from rotary_irq_rp2 import RotaryIRQ
 
@@ -63,14 +63,14 @@ def main():
     '''
 
     state = {
-    "single_wheel_mode": False
+    "wheel_mode": 0 # 0 both, 1 left, 2 right
     }
 
     lcd = init_lcd(PIN_SDA, PIN_SCL)
     r1 = init_rotary(PIN_R1_CLK, PIN_R1_DT)
     r2 = init_rotary(PIN_R2_CLK, PIN_R2_DT)
     button = Pin(PIN_BUTTON, Pin.IN, Pin.PULL_UP)
-    state["single_wheel_mode"] = False
+    state["wheel_mode"] = False
     distance_constant_calculated = DISTANCE_CONSTANT
 
     val_old1, val_old2 = r1.value(), r2.value()
@@ -117,9 +117,11 @@ def main():
             if button_held_for >= MODE_HOLD_TIME:
                 button_held_for = 0
                 print('entering menu')
-                enter_menu(lcd, button, button_held_for, state)
+                disable_rotatries([r1, r2])
+                enter_menu(lcd, button, button_held_for, state, r1, r2)
+                enable_rotaries(r1, r2, state)
                 print('exiting menu')
-                distance_constant_calculated = DISTANCE_CONSTANT * 2 if state["single_wheel_mode"] else DISTANCE_CONSTANT
+                distance_constant_calculated = DISTANCE_CONSTANT * 2 if state["wheel_mode"] else DISTANCE_CONSTANT
                 result = (val_new1 + val_new2) / 2
                 distance = result * distance_constant_calculated
                 reset_lcd(lcd, distance)
@@ -164,7 +166,7 @@ def reset_lcd(lcd, distance):
 
 
 
-def enter_menu(lcd, button, button_held_for, state):
+def enter_menu(lcd, button, button_held_for, state, r1, r2):
     """
     Enters the menu and allows the user to toggle the single wheel mode.
 
@@ -172,7 +174,7 @@ def enter_menu(lcd, button, button_held_for, state):
         lcd (object): The LCD object used for displaying information.
         button (object): The button object used for user input.
         button_held_for (int): The duration for which the button has been held.
-        single_wheel_mode (bool): The current state of the single wheel mode.
+        wheel_mode (int): Which wheels are currently used for measurement.
 
     Returns:
         None
@@ -182,8 +184,7 @@ def enter_menu(lcd, button, button_held_for, state):
     first_loop = True
 
     lcd.clear()
-    enabled = state["single_wheel_mode"]
-    lcd.putstr(f"Single wheel    mode: {enabled}")
+    lcd.putstr(f"Mode: {get_mode_string(state)}")
 
     while mode_select:
         # press
@@ -208,10 +209,9 @@ def enter_menu(lcd, button, button_held_for, state):
 
             print("release")
 
-            state["single_wheel_mode"] = not state["single_wheel_mode"]
+            state["wheel_mode"] = (state["wheel_mode"] + 1) % 3
             lcd.clear()
-            enabled = state["single_wheel_mode"]
-            lcd.putstr(f"Single wheel mode: {'Enabled' if enabled else 'Disabled'}")
+            lcd.putstr(f"Mode: {get_mode_string(state)}")
 
         # release after entering menu
         if button.value() and button_pressed and first_loop:
@@ -225,6 +225,35 @@ def enter_menu(lcd, button, button_held_for, state):
 
     print('Button held for 1 second')
 
+def get_mode_string(state):
+    """
+    Returns the string representation of the current wheel mode.
+
+    Args:
+        state (dict): The state object containing the current wheel mode.
+
+    Returns:
+        str: The string representation of the current wheel mode.
+    """
+    modes = ["Both wheels", "Left wheel", "Right wheel"]
+    return modes[state["wheel_mode"]]
+
+def disable_rotatries(rotaryEncoders):
+    for r in rotaryEncoders:
+        r._hal_disable_irq()
+
+def enable_rotaries(r1, r2, state):
+    if state["wheel_mode"] == 0:
+        r1._hal_enable_irq()
+        r2._hal_enable_irq()
+
+    elif state["wheel_mode"] == 1:
+        r1._hal_enable_irq()
+        r2._hal_disable_irq()
+
+    elif state["wheel_mode"] == 2:
+        r1._hal_disable_irq()
+        r2._hal_enable_irq()
 
 #if __name__ == "__main__":
 main()
