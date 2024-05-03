@@ -85,11 +85,12 @@ def main():
     button_pressed = False
     first_loop = False
     result = 0
+    i = 0
 
     while True:
         val_new1, val_new2 = r1.value(), r2.value()
 
-        if val_old1 != val_new1 or val_old2 != val_new2:
+        if (val_old1 != val_new1 or val_old2 != val_new2) and i % LCD_UPDATE == 0:
             val_old1, val_old2 = val_new1, val_new2
 
             if state["wheel_mode"] == 0:
@@ -158,6 +159,7 @@ def main():
 
             print("first release")
 
+        i = (i + 1) % LCD_UPDATE
         utime.sleep_ms(SLEEP_TIME)
 
 
