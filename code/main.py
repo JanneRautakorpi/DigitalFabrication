@@ -1,5 +1,11 @@
-import utime
-from machine import I2C, Pin
+"""
+This module contains the main code for the Measurement Fox project.
+It initializes the LCD display and rotary encoders,and provides functions
+for handling user input and displaying information on the LCD.
+"""
+
+import utime # type: ignore
+from machine import I2C, Pin # type: ignore
 from pico_i2c_lcd import I2cLcd
 from rotary_irq_rp2 import RotaryIRQ
 
@@ -17,10 +23,7 @@ PIN_BUTTON = 7
 SLEEP_TIME = 50  # in ms
 MODE_HOLD_TIME = 1000
 DISTANCE_CONSTANT = 4.90/468
-
-state = {
-    "single_wheel_mode": False
-}
+LCD_UPDATE = 10 # update display every n loop
 
 def init_lcd(sda_pin, scl_pin):
     '''
@@ -58,6 +61,11 @@ def main():
     No parameters.
     No return  values.
     '''
+
+    state = {
+    "single_wheel_mode": False
+    }
+
     lcd = init_lcd(PIN_SDA, PIN_SCL)
     r1 = init_rotary(PIN_R1_CLK, PIN_R1_DT)
     r2 = init_rotary(PIN_R2_CLK, PIN_R2_DT)
@@ -88,7 +96,7 @@ def main():
             distance = result * distance_constant_calculated
             lcd.move_to(0, 1)
             text = f"{distance:.2f}"
-            if (text[0] != '-'):
+            if text[0] != '-':
                 text = " " + text
 
             lcd.putstr(text)
@@ -111,7 +119,7 @@ def main():
                 print('entering menu')
                 enter_menu(lcd, button, button_held_for, state)
                 print('exiting menu')
-                distance_constant_calculated = DISTANCE_CONSTANT * 2 if state["single_wheel_mode"] else DISTANCE_CONSTANT 
+                distance_constant_calculated = DISTANCE_CONSTANT * 2 if state["single_wheel_mode"] else DISTANCE_CONSTANT
                 result = (val_new1 + val_new2) / 2
                 distance = result * distance_constant_calculated
                 reset_lcd(lcd, distance)
@@ -123,8 +131,6 @@ def main():
             button_held_for = 0
 
             print("release")
-
-            print("CLEARING")
 
             r1.reset()
             r2.reset()
@@ -138,7 +144,8 @@ def main():
             print("first release")
 
         utime.sleep_ms(SLEEP_TIME)
-        
+
+
 def reset_lcd(lcd, distance):
     """
     Clears the LCD display and sets the initial text.
@@ -150,7 +157,7 @@ def reset_lcd(lcd, distance):
     None
     """
     text = f"{float(distance):.2f}"
-    if (text[0] != '-'):
+    if text[0] != '-':
         text = " " + text
     lcd.clear()
     lcd.putstr(f"Distance pushed:{text}   meters")
@@ -176,10 +183,9 @@ def enter_menu(lcd, button, button_held_for, state):
 
     lcd.clear()
     enabled = state["single_wheel_mode"]
-    lcd.putstr(f"Single wheel mode: {enabled}")
+    lcd.putstr(f"Single wheel    mode: {enabled}")
 
     while mode_select:
-            
         # press
         if not button.value() and not button_pressed and not first_loop:
             button_pressed = True
@@ -205,7 +211,7 @@ def enter_menu(lcd, button, button_held_for, state):
             state["single_wheel_mode"] = not state["single_wheel_mode"]
             lcd.clear()
             enabled = state["single_wheel_mode"]
-            lcd.putstr(f"Single wheel mode: {enabled}")
+            lcd.putstr(f"Single wheel mode: {'Enabled' if enabled else 'Disabled'}")
 
         # release after entering menu
         if button.value() and button_pressed and first_loop:
