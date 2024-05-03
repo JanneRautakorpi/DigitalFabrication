@@ -72,7 +72,10 @@ def main():
 
     utime.sleep_ms(2000)
 
-    reset_lcd(lcd)
+    reset_lcd(lcd, 0.0)
+
+    button_pressed = False
+    first_loop = False
 
     while True:
         val_new1, val_new2 = r1.value(), r2.value()
@@ -91,30 +94,52 @@ def main():
             lcd.putstr(text)
         
 
-        # todo: make button logic cleaner like enter_menu function
-        # fix: measured distance should reset on button release, not press
-        if not button.value() and not first_loop:
-            print('Button pressed for', button_held_for)
+        # press
+        if not button.value() and not button_pressed and not first_loop:
+            button_pressed = True
+
+            print("Button pressed")
+
+        # hold
+        if not button.value() and button_pressed and not first_loop:
+            button_held_for += SLEEP_TIME
+
+            print("hold for", button_held_for)
+
+            if button_held_for >= MODE_HOLD_TIME:
+                button_held_for = 0
+                print('entering menu')
+                enter_menu(lcd, button, button_held_for, state)
+                print('exiting menu')
+                distance_constant_calculated = DISTANCE_CONSTANT * 2 if state["single_wheel_mode"] else DISTANCE_CONSTANT 
+                result = (val_new1 + val_new2) / 2
+                distance = result * distance_constant_calculated
+                reset_lcd(lcd, distance)
+                first_loop = True
+
+        # release
+        if button.value() and button_pressed and not first_loop:
+            button_pressed = False
+            button_held_for = 0
+
+            print("release")
+
+            print("CLEARING")
+
             r1.reset()
             r2.reset()
 
-            if not first_loop:
-                button_held_for += SLEEP_TIME
-                if button_held_for >= MODE_HOLD_TIME:
-                    button_held_for = 0
-                    print('entering menu')
-                    enter_menu(lcd, button, button_held_for, state)
-                    print('exiting menu')
-                    first_loop = True
-                    distance_constant_calculated = DISTANCE_CONSTANT / 2 if state["single_wheel_mode"] else DISTANCE_CONSTANT 
-        else:
+        # release after exiting menu
+        if button.value() and button_pressed and first_loop:
+            first_loop = False
+            button_pressed = False
             button_held_for = 0
-            if button.value():
-                first_loop = False
+
+            print("first release")
 
         utime.sleep_ms(SLEEP_TIME)
-
-def reset_lcd(lcd):
+        
+def reset_lcd(lcd, distance):
     """
     Clears the LCD display and sets the initial text.
 
@@ -124,8 +149,11 @@ def reset_lcd(lcd):
     Returns:
     None
     """
+    text = f"{float(distance):.2f}"
+    if (text[0] != '-'):
+        text = " " + text
     lcd.clear()
-    lcd.putstr("Distance pushed: 0.00   meters")
+    lcd.putstr(f"Distance pushed:{text}   meters")
 
 
 
@@ -187,30 +215,9 @@ def enter_menu(lcd, button, button_held_for, state):
 
             print("first release")
 
-
-        # if not button.value():
-        #     if not first_loop:
-        #         button_held_for += SLEEP_TIME
-        #         print("Button held for ", button_held_for)
-        #         if button_held_for >= MODE_HOLD_TIME:
-        #             mode_select = False
-        # else:
-        #     if button.value() and not button_pressed:
-        #         button_pressed = True
-        #         print('Button pressed in menu')
-        #         single_wheel_mode = not single_wheel_mode
-        #         print("Single wheel mode set to ", single_wheel_mode)
-        #         lcd.clear()
-        #         lcd.putstr(f"Single wheel mode: {single_wheel_mode}")
-        #     else:
-        #         button_held_for = 0
-        #         button_pressed = False
-        #         first_loop = False
-
         utime.sleep_ms(SLEEP_TIME)
 
     print('Button held for 1 second')
-    reset_lcd(lcd)
 
 
 #if __name__ == "__main__":
