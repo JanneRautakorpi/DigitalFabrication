@@ -16,7 +16,7 @@ PIN_R2_DT = 17
 PIN_BUTTON = 7
 SLEEP_TIME = 50  # in ms
 MODE_HOLD_TIME = 1000
-DISTANCE_CONSTANT = 10/85
+DISTANCE_CONSTANT = 4.90/468
 
 state = {
     "single_wheel_mode": False
@@ -82,7 +82,7 @@ def main():
             result = (val_new1 + val_new2) / 2
             print(f'Values = {val_new1}, {val_new2}')
             print(f'Result = {result}')
-            distance = result / distance_constant_calculated
+            distance = result * distance_constant_calculated
             lcd.move_to(0, 1)
             text = f"{distance:.2f}"
             if (text[0] != '-'):
