@@ -86,11 +86,12 @@ def main():
     first_loop = False
     result = 0
     i = 0
+    should_update = False
 
     while True:
         val_new1, val_new2 = r1.value(), r2.value()
 
-        if (val_old1 != val_new1 or val_old2 != val_new2) and i % LCD_UPDATE == 0:
+        if ((val_old1 != val_new1 or val_old2 != val_new2) or should_update) and i % LCD_UPDATE == 0:
             val_old1, val_old2 = val_new1, val_new2
 
             if state["wheel_mode"] == 0:
@@ -111,6 +112,8 @@ def main():
                 text = " " + text
 
             lcd.putstr(text)
+
+            should_update = False
 
         # press
         if not button.value() and not button_pressed and not first_loop:
@@ -150,6 +153,7 @@ def main():
             r2.reset()
             result = 0
             state["oldResult"] = 0
+            should_update = True
 
         # release after exiting menu
         if button.value() and button_pressed and first_loop:
