@@ -63,7 +63,8 @@ def main():
     '''
 
     state = {
-    "wheel_mode": 0 # 0 both, 1 left, 2 right
+    "wheel_mode": 0, # 0 both, 1 left, 2 right
+    "oldResult": 0
     }
 
     lcd = init_lcd(PIN_SDA, PIN_SCL)
@@ -71,7 +72,6 @@ def main():
     r2 = init_rotary(PIN_R2_CLK, PIN_R2_DT)
     button = Pin(PIN_BUTTON, Pin.IN, Pin.PULL_UP)
     state["wheel_mode"] = False
-    distance_constant_calculated = DISTANCE_CONSTANT
 
     val_old1, val_old2 = r1.value(), r2.value()
 
@@ -90,10 +90,19 @@ def main():
 
         if val_old1 != val_new1 or val_old2 != val_new2:
             val_old1, val_old2 = val_new1, val_new2
-            result = (val_new1 + val_new2) / 2
+
+            if state["wheel_mode"] == 0:
+                result = (val_new1 + val_new2) / 2
+
+            elif state["wheel_mode"] == 1:
+                result = val_new1
+
+            elif state["wheel_mode"] == 2:
+                result = val_new2
+
             print(f'Values = {val_new1}, {val_new2}')
             print(f'Result = {result}')
-            distance = result * distance_constant_calculated
+            distance = calculate_distance(result, state)
             lcd.move_to(0, 1)
             text = f"{distance:.2f}"
             if text[0] != '-':
@@ -118,12 +127,14 @@ def main():
                 button_held_for = 0
                 print('entering menu')
                 disable_rotatries([r1, r2])
+                state["oldResult"] += result
+                r1.reset()
+                r2.reset()
+                result = 0
                 enter_menu(lcd, button, button_held_for, state, r1, r2)
                 enable_rotaries(r1, r2, state)
                 print('exiting menu')
-                distance_constant_calculated = DISTANCE_CONSTANT * 2 if state["wheel_mode"] else DISTANCE_CONSTANT
-                result = (val_new1 + val_new2) / 2
-                distance = result * distance_constant_calculated
+                distance = calculate_distance(result, state)
                 reset_lcd(lcd, distance)
                 first_loop = True
 
@@ -136,6 +147,7 @@ def main():
 
             r1.reset()
             r2.reset()
+            state["oldResult"] = 0
 
         # release after exiting menu
         if button.value() and button_pressed and first_loop:
@@ -254,6 +266,9 @@ def enable_rotaries(r1, r2, state):
     elif state["wheel_mode"] == 2:
         r1._hal_disable_irq()
         r2._hal_enable_irq()
+
+def calculate_distance(result, state):
+    return (state["oldResult"] + result) * DISTANCE_CONSTANT
 
 #if __name__ == "__main__":
 main()
