@@ -80,7 +80,7 @@ def main():
 
     utime.sleep_ms(2000)
 
-    reset_lcd(lcd, 0.0)
+    reset_lcd(lcd, 0)
 
     button_pressed = False
     first_loop = False
@@ -106,12 +106,7 @@ def main():
             print(f'Values = {val_new1}, {val_new2}')
             print(f'Result = {result}')
             distance = calculate_distance(result, state)
-            lcd.move_to(0, 1)
-            text = f"{distance:.2f}"
-            if text[0] != '-':
-                text = " " + text
-
-            lcd.putstr(text)
+            lcd_update_distance(lcd, distance)
 
             should_update = False
 
@@ -149,6 +144,7 @@ def main():
 
             print("release")
 
+            reset_lcd(lcd, 0)
             r1.reset()
             r2.reset()
             result = 0
@@ -177,12 +173,10 @@ def reset_lcd(lcd, distance):
     Returns:
     None
     """
-    text = f"{float(distance):.2f}"
-    if text[0] != '-':
-        text = " " + text
     lcd.clear()
-    lcd.putstr(f"Distance pushed:{text}   meters")
-
+    lcd.putstr("Distance pushed:")
+    lcd_update_distance(lcd, distance)
+    lcd.putstr("  meters")
 
 
 def enter_menu(lcd, button, button_held_for, state):
@@ -320,6 +314,26 @@ def lcd_put_mode_text(lcd, state):
     lcd.putstr("Mode:")
     lcd.move_to(0, 1)
     lcd.putstr(get_mode_string(state))
+
+def lcd_update_distance(lcd, distance):
+    """
+    Updates the distance on the LCD screen.
+
+    Args:
+        lcd: The LCD object used for displaying text.
+        distance: The distance value to display.
+
+    Returns:
+        None
+    """
+    lcd.move_to(0, 1)
+    text = f"{distance:.2f}"
+    if text[0] != '-':
+        text = " " + text
+
+    if len(text) < 8:
+        text += " "
+    lcd.putstr(text)
 
 #if __name__ == "__main__":
 main()
